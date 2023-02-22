@@ -1,10 +1,11 @@
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudio.CoreAudioApi;
 using Vosk;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.ComponentModel;
+using Cyotek.Windows.Forms;
 
 namespace RecogUI
 {
@@ -12,16 +13,50 @@ namespace RecogUI
     {
 
         private Model? model = null;
-        private bool parado = false;
+        private bool parado = true;
         private static BackgroundWorker bw;
         private WasapiCapture waveIn;
+        private volatile FrmSubtitle _frmSubtitle;
+        private volatile SettingsObj _settings;
+        private readonly ColorPickerDialog _colorDialog = new ColorPickerDialog();
+        private Font _font = DefaultFont;
 
-        /*[DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
+        public MainForm()
+        {
+            InitializeComponent();
+            comboLang.SelectedIndex = 2;
+            comboSmpR.SelectedIndex = 3;
+            rbLoop.Checked = true;
+            LoadModel(comboLang.SelectedIndex);
+            cbxGradientType.SelectedIndex = 0;
+            _settings = new SettingsObj
+            {
+                BorderColor = Color.Black,
+                Color1 = Color.GhostWhite,
+                Color2 = Color.LightGray,
+                FontActual = new Font(new FontFamily("Microsoft Yahei"), 24.0f, FontStyle.Regular, GraphicsUnit.Point),
+                GradientType = 1
+            };
+            try
+            {
+                _font = FontSerializationHelper.Deserialize(_settings.Font);
+                cbxGradientType.SelectedIndex = _settings.GradientType;
+                btnColor1.BackColor = _settings.Color1;
+                btnColor2.BackColor = _settings.Color2;
+                btnBorderColor.BackColor = _settings.BorderColor;
+                checkBoxPreserveSlash.Checked = _settings.PreserveSlash;
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
 
-        [DllImport("kernel32.dll")]
-        public static extern void FreeConsole();*/
+        private WasapiCapture getInstance()
+        {
+            if (rbLoop.Checked) return new WasapiLoopbackCapture();
+            else return new WasapiCapture();
+        }
 
         public void LoadModel(int idx)
         {
@@ -70,7 +105,7 @@ namespace RecogUI
 
         public int getSampleRate(int idx)
         {
-            switch(idx)
+            switch (idx)
             {
                 case 0:
                     return 16000;
@@ -86,13 +121,72 @@ namespace RecogUI
             }
         }
 
+        /*private int CountWords(string input)
+        {
+            // Define a regular expression to match words in the specified languages
+            string pattern = @"(\b[A-Za-z\xC0-\xFF]+\b)+";
+
+            // Use LINQ to split the input string into sentences
+            var sentences = input.Split(new char[] { '.', '!', '?' })
+                                 .Where(s => !string.IsNullOrWhiteSpace(s));
+
+            // Count the words in each sentence that match the pattern
+            int wordCount = sentences.Sum(s => Regex.Matches(s, pattern)
+                                                    .Cast<Match>()
+                                                    .Count());
+
+            return wordCount;
+        }*/
+
+        private void ProcessHoverBox(string sub)
+        {
+
+            int wordCount = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+            if (wordCount < 15)
+            {
+                if (_frmSubtitle != null)
+                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
+                    _frmSubtitle.UpdateSub(line1, line2)), sub, "");
+            }
+            else if (wordCount >= 15 && wordCount <= 30)
+            {
+                string[] words = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                string firstPart = string.Join(" ", words, 0, 15);
+                string secondPart = string.Join(" ", words, 15, wordCount - 15);
+
+                if (_frmSubtitle != null)
+                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
+                    _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
+            }
+            else
+            {
+                string[] words = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                int startIndex = Math.Max(0, wordCount - 30);
+                string[] lastTrunc = new string[30];
+                Array.Copy(words, startIndex, lastTrunc, 0, Math.Min(30, wordCount - startIndex));
+
+                string firstPart = string.Join(" ", lastTrunc, 0, Math.Min(20, lastTrunc.Length));
+                string secondPart = string.Join(" ", lastTrunc, Math.Min(20, lastTrunc.Length), lastTrunc.Length - Math.Min(20, lastTrunc.Length));
+
+                if (_frmSubtitle != null)
+                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
+                    _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
+            }
+        }
+
         public void HandleResult(string res, bool pa)
         {
             var resObject = JsonConvert.DeserializeObject<Result>(res);
-            if (resObject != null) {
+            if (resObject != null)
+            {
                 if (pa)
                 {
-                    if (resObject.partial.Length > 0) tbRealtime.Text = resObject.partial;
+                    if (resObject.partial.Length > 0)
+                    {
+                        tbRealtime.Text = resObject.partial;
+                        ProcessHoverBox(resObject.partial);
+                    }
                 }
                 else
                 {
@@ -107,21 +201,6 @@ namespace RecogUI
                     }
                 }
             }
-        }
-
-        public MainForm()
-        {
-            InitializeComponent();
-            comboLang.SelectedIndex = 2;
-            comboSmpR.SelectedIndex = 3;
-            rbLoop.Checked = true;
-            LoadModel(comboLang.SelectedIndex);
-        }
-
-        private WasapiCapture getInstance()
-        {
-            if (rbLoop.Checked) return new WasapiLoopbackCapture();
-            else return new WasapiCapture();
         }
 
         private void PerformLongRunningTask(object sender, DoWorkEventArgs e)
@@ -210,6 +289,7 @@ namespace RecogUI
             comboSmpR.Enabled = true;
             rbLoop.Enabled = true;
             rbMic.Enabled = true;
+            _frmSubtitle?.Hide();
             bw.CancelAsync();
         }
 
@@ -220,7 +300,6 @@ namespace RecogUI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            //AllocConsole();
             btnStopRecog.Enabled = false;
             btnStartRecog.Enabled = true;
         }
@@ -232,6 +311,57 @@ namespace RecogUI
                 e.Cancel = true;
                 MessageBox.Show("Please stop recognition thread before exiting!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private void cbSub_CheckedChanged(object sender, EventArgs e)
+        {
+            if(cbSub.Checked)
+            {
+                _frmSubtitle?.Dispose();
+                _frmSubtitle = new FrmSubtitle(_settings);
+                _frmSubtitle.Show();
+            } else
+            {
+                _frmSubtitle?.Hide();
+            }
+        }
+
+        private void btnFont_Click(object sender, EventArgs e)
+        {
+            dlgFont.Font = _font;
+            var res = dlgFont.ShowDialog();
+            if (res == DialogResult.OK || res == DialogResult.Yes)
+            {
+                var font = dlgFont.Font;
+                // Force point unit
+                _font = new Font(font.FontFamily, font.Size, font.Style, GraphicsUnit.Point, font.GdiCharSet);
+            }
+        }
+
+        private void btnColors_Click(object sender, EventArgs e)
+        {
+            var button = (Button)sender;
+            _colorDialog.Color = button.BackColor;
+            var res = _colorDialog.ShowDialog();
+            if (res == DialogResult.OK || res == DialogResult.Yes)
+                button.BackColor = _colorDialog.Color;
+        }
+
+        private void checkBoxPreserveSlash_CheckedChanged(object sender, EventArgs e)
+        {
+
+            _settings.PreserveSlash = checkBoxPreserveSlash.Checked;
+        }
+
+        private void btn_applySubSettings_Click(object sender, EventArgs e)
+        {
+            _settings.Font = FontSerializationHelper.Serialize(_font);
+            _settings.Color1 = btnColor1.BackColor;
+            _settings.Color2 = btnColor2.BackColor;
+            _settings.BorderColor = btnBorderColor.BackColor;
+            _settings.GradientType = cbxGradientType.SelectedIndex;
+            _settings.PreserveSlash = checkBoxPreserveSlash.Checked;
+            _frmSubtitle?.UpdateFromSettings(_settings);
         }
     }
 }

@@ -34,7 +34,7 @@
             this.tbRealtime = new System.Windows.Forms.TextBox();
             this.btnStopRecog = new System.Windows.Forms.Button();
             this.btnStartRecog = new System.Windows.Forms.Button();
-            this.cbLyrics = new System.Windows.Forms.CheckBox();
+            this.cbSub = new System.Windows.Forms.CheckBox();
             this.comboSmpR = new System.Windows.Forms.ComboBox();
             this.lbSampR = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
@@ -48,6 +48,18 @@
             this.tbStats = new System.Windows.Forms.TextBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.tbFinalText = new System.Windows.Forms.TextBox();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.btn_applySubSettings = new System.Windows.Forms.Button();
+            this.checkBoxPreserveSlash = new System.Windows.Forms.CheckBox();
+            this.cbxGradientType = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.btnBorderColor = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.btnColor2 = new System.Windows.Forms.Button();
+            this.btnColor1 = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
+            this.btnFont = new System.Windows.Forms.Button();
+            this.dlgFont = new System.Windows.Forms.FontDialog();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -55,12 +67,14 @@
             this.tabPage2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.tabPage3.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(12, 12);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -72,7 +86,7 @@
             this.tabPage1.Controls.Add(this.groupBox1);
             this.tabPage1.Controls.Add(this.btnStopRecog);
             this.tabPage1.Controls.Add(this.btnStartRecog);
-            this.tabPage1.Controls.Add(this.cbLyrics);
+            this.tabPage1.Controls.Add(this.cbSub);
             this.tabPage1.Controls.Add(this.comboSmpR);
             this.tabPage1.Controls.Add(this.lbSampR);
             this.tabPage1.Controls.Add(this.panel1);
@@ -127,15 +141,16 @@
             this.btnStartRecog.UseVisualStyleBackColor = true;
             this.btnStartRecog.Click += new System.EventHandler(this.btnStartRecog_Click);
             // 
-            // cbLyrics
+            // cbSub
             // 
-            this.cbLyrics.AutoSize = true;
-            this.cbLyrics.Location = new System.Drawing.Point(378, 102);
-            this.cbLyrics.Name = "cbLyrics";
-            this.cbLyrics.Size = new System.Drawing.Size(190, 24);
-            this.cbLyrics.TabIndex = 6;
-            this.cbLyrics.Text = "Show hover subtitle box";
-            this.cbLyrics.UseVisualStyleBackColor = true;
+            this.cbSub.AutoSize = true;
+            this.cbSub.Location = new System.Drawing.Point(378, 102);
+            this.cbSub.Name = "cbSub";
+            this.cbSub.Size = new System.Drawing.Size(190, 24);
+            this.cbSub.TabIndex = 6;
+            this.cbSub.Text = "Show hover subtitle box";
+            this.cbSub.UseVisualStyleBackColor = true;
+            this.cbSub.CheckedChanged += new System.EventHandler(this.cbSub_CheckedChanged);
             // 
             // comboSmpR
             // 
@@ -279,6 +294,144 @@
             this.tbFinalText.Size = new System.Drawing.Size(243, 311);
             this.tbFinalText.TabIndex = 0;
             // 
+            // tabPage3
+            // 
+            this.tabPage3.Controls.Add(this.btn_applySubSettings);
+            this.tabPage3.Controls.Add(this.checkBoxPreserveSlash);
+            this.tabPage3.Controls.Add(this.cbxGradientType);
+            this.tabPage3.Controls.Add(this.label2);
+            this.tabPage3.Controls.Add(this.btnBorderColor);
+            this.tabPage3.Controls.Add(this.label3);
+            this.tabPage3.Controls.Add(this.btnColor2);
+            this.tabPage3.Controls.Add(this.btnColor1);
+            this.tabPage3.Controls.Add(this.label1);
+            this.tabPage3.Controls.Add(this.btnFont);
+            this.tabPage3.Location = new System.Drawing.Point(4, 29);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Size = new System.Drawing.Size(654, 401);
+            this.tabPage3.TabIndex = 0;
+            this.tabPage3.Text = "DesktopSub Settings";
+            // 
+            // btn_applySubSettings
+            // 
+            this.btn_applySubSettings.Location = new System.Drawing.Point(282, 349);
+            this.btn_applySubSettings.Name = "btn_applySubSettings";
+            this.btn_applySubSettings.Size = new System.Drawing.Size(94, 29);
+            this.btn_applySubSettings.TabIndex = 13;
+            this.btn_applySubSettings.Text = "Apply";
+            this.btn_applySubSettings.UseVisualStyleBackColor = true;
+            this.btn_applySubSettings.Click += new System.EventHandler(this.btn_applySubSettings_Click);
+            // 
+            // checkBoxPreserveSlash
+            // 
+            this.checkBoxPreserveSlash.AutoSize = true;
+            this.checkBoxPreserveSlash.Location = new System.Drawing.Point(271, 301);
+            this.checkBoxPreserveSlash.Name = "checkBoxPreserveSlash";
+            this.checkBoxPreserveSlash.Size = new System.Drawing.Size(119, 24);
+            this.checkBoxPreserveSlash.TabIndex = 11;
+            this.checkBoxPreserveSlash.Text = "Leave \'/\' as-is";
+            this.checkBoxPreserveSlash.UseVisualStyleBackColor = true;
+            this.checkBoxPreserveSlash.CheckedChanged += new System.EventHandler(this.checkBoxPreserveSlash_CheckedChanged);
+            // 
+            // cbxGradientType
+            // 
+            this.cbxGradientType.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbxGradientType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxGradientType.FormattingEnabled = true;
+            this.cbxGradientType.Items.AddRange(new object[] {
+            "No Gradient",
+            "Double Color Gradient",
+            "Triple Color Gradient"});
+            this.cbxGradientType.Location = new System.Drawing.Point(261, 238);
+            this.cbxGradientType.Margin = new System.Windows.Forms.Padding(4);
+            this.cbxGradientType.Name = "cbxGradientType";
+            this.cbxGradientType.Size = new System.Drawing.Size(243, 28);
+            this.cbxGradientType.TabIndex = 10;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(142, 242);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(104, 20);
+            this.label2.TabIndex = 9;
+            this.label2.Text = "Gradient Type:";
+            // 
+            // btnBorderColor
+            // 
+            this.btnBorderColor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnBorderColor.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnBorderColor.BackColor = System.Drawing.Color.Gray;
+            this.btnBorderColor.Location = new System.Drawing.Point(260, 187);
+            this.btnBorderColor.Margin = new System.Windows.Forms.Padding(4);
+            this.btnBorderColor.Name = "btnBorderColor";
+            this.btnBorderColor.Size = new System.Drawing.Size(244, 29);
+            this.btnBorderColor.TabIndex = 8;
+            this.btnBorderColor.UseVisualStyleBackColor = false;
+            this.btnBorderColor.Click += new System.EventHandler(this.btnColors_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(141, 193);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(95, 20);
+            this.label3.TabIndex = 7;
+            this.label3.Text = "Border color:";
+            // 
+            // btnColor2
+            // 
+            this.btnColor2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnColor2.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.btnColor2.Location = new System.Drawing.Point(245, 139);
+            this.btnColor2.Margin = new System.Windows.Forms.Padding(4);
+            this.btnColor2.Name = "btnColor2";
+            this.btnColor2.Size = new System.Drawing.Size(259, 29);
+            this.btnColor2.TabIndex = 5;
+            this.btnColor2.UseVisualStyleBackColor = false;
+            this.btnColor2.Click += new System.EventHandler(this.btnColors_Click);
+            // 
+            // btnColor1
+            // 
+            this.btnColor1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnColor1.BackColor = System.Drawing.Color.LightCyan;
+            this.btnColor1.Location = new System.Drawing.Point(245, 92);
+            this.btnColor1.Margin = new System.Windows.Forms.Padding(4);
+            this.btnColor1.Name = "btnColor1";
+            this.btnColor1.Size = new System.Drawing.Size(259, 29);
+            this.btnColor1.TabIndex = 4;
+            this.btnColor1.UseVisualStyleBackColor = false;
+            this.btnColor1.Click += new System.EventHandler(this.btnColors_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(141, 99);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(77, 20);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "Text color:";
+            // 
+            // btnFont
+            // 
+            this.btnFont.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnFont.Location = new System.Drawing.Point(144, 34);
+            this.btnFont.Margin = new System.Windows.Forms.Padding(4);
+            this.btnFont.Name = "btnFont";
+            this.btnFont.Size = new System.Drawing.Size(360, 29);
+            this.btnFont.TabIndex = 1;
+            this.btnFont.Text = "Font";
+            this.btnFont.UseVisualStyleBackColor = true;
+            this.btnFont.Click += new System.EventHandler(this.btnFont_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
@@ -304,6 +457,8 @@
             this.groupBox3.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.tabPage3.ResumeLayout(false);
+            this.tabPage3.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -321,7 +476,7 @@
         private RadioButton rbLoop;
         private Label lbSampR;
         private ComboBox comboSmpR;
-        private CheckBox cbLyrics;
+        private CheckBox cbSub;
         private Button btnStartRecog;
         private Button btnStopRecog;
         private GroupBox groupBox1;
@@ -330,5 +485,17 @@
         private GroupBox groupBox3;
         private TextBox tbFinalText;
         private TextBox tbStats;
+        private TabPage tabPage3;
+        private Button btnFont;
+        private FontDialog dlgFont;
+        private Button btnColor1;
+        private Label label1;
+        private Button btnColor2;
+        private Button btnBorderColor;
+        private Label label3;
+        private ComboBox cbxGradientType;
+        private Label label2;
+        private CheckBox checkBoxPreserveSlash;
+        private Button btn_applySubSettings;
     }
 }
