@@ -60,35 +60,17 @@ namespace RecogUI
 
         public void LoadModel(int idx)
         {
+            string[] models = { "model-small-en", "model-small-fr", "model-small-es", "model-small-pt", "model-small-it", "model-small-de" };
             string cpath = Directory.GetCurrentDirectory() + "\\";
-            switch (idx)
+
+            if (idx >= 0 && idx < models.Length)
             {
-                case 0:
-                    model = new Model(cpath + "model-small-en");
-                    break;
-                case 1:
-                    model = new Model(cpath + "model-small-fr");
-                    break;
-                case 2:
-                    model = new Model(cpath + "model-small-es");
-                    break;
-                case 3:
-                    model = new Model(cpath + "model-small-pt");
-                    break;
-                case 4:
-                    model = new Model(cpath + "model-small-it");
-                    break;
-                case 5:
-                    model = new Model(cpath + "model-small-de");
-                    break;
-                default:
-                    break;
-            }
-            if (model != null)
-            {
+                model = new Model(cpath + models[idx]);
+
                 Type type = model.GetType();
-                FieldInfo? field = type.GetField("handle", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo field = type.GetField("handle", BindingFlags.NonPublic | BindingFlags.Instance);
                 IntPtr handle = ((HandleRef)field.GetValue(model)).Handle;
+
                 if (handle == IntPtr.Zero)
                 {
                     MessageBox.Show("Model cannot be loaded! Check whether it exists.",
@@ -120,86 +102,45 @@ namespace RecogUI
                     return 48000;
             }
         }
-
-        /*private int CountWords(string input)
-        {
-            // Define a regular expression to match words in the specified languages
-            string pattern = @"(\b[A-Za-z\xC0-\xFF]+\b)+";
-
-            // Use LINQ to split the input string into sentences
-            var sentences = input.Split(new char[] { '.', '!', '?' })
-                                 .Where(s => !string.IsNullOrWhiteSpace(s));
-
-            // Count the words in each sentence that match the pattern
-            int wordCount = sentences.Sum(s => Regex.Matches(s, pattern)
-                                                    .Cast<Match>()
-                                                    .Count());
-
-            return wordCount;
-        }*/
-
         private void ProcessHoverBox(string sub)
         {
+            int wordCount = sub.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
-            int wordCount = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
-
-            if (wordCount < 15)
+            if (wordCount < 15 && _frmSubtitle != null)
+                _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) => _frmSubtitle.UpdateSub(line1, line2)), sub, "");
+            else if (_frmSubtitle != null)
             {
-                if (_frmSubtitle != null)
-                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
-                    _frmSubtitle.UpdateSub(line1, line2)), sub, "");
-            }
-            else if (wordCount >= 15 && wordCount <= 30)
-            {
-                string[] words = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                string firstPart = string.Join(" ", words, 0, 15);
-                string secondPart = string.Join(" ", words, 15, wordCount - 15);
+                string[] words = sub.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string firstPart = string.Join(' ', words, 0, 15);
+                string secondPart = string.Join(' ', words, 15, Math.Min(wordCount - 15, 15));
 
-                if (_frmSubtitle != null)
-                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
-                    _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
-            }
-            else
-            {
-                string[] words = sub.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                int startIndex = Math.Max(0, wordCount - 30);
-                string[] lastTrunc = new string[30];
-                Array.Copy(words, startIndex, lastTrunc, 0, Math.Min(30, wordCount - startIndex));
+                if (wordCount > 30)
+                {
+                    words = words.Skip(Math.Max(0, wordCount - 30)).Take(30).ToArray();
+                    firstPart = string.Join(' ', words, 0, Math.Min(words.Length, 20));
+                    secondPart = string.Join(' ', words, Math.Min(words.Length, 20), Math.Max(0, words.Length - 20));
+                }
 
-                string firstPart = string.Join(" ", lastTrunc, 0, Math.Min(20, lastTrunc.Length));
-                string secondPart = string.Join(" ", lastTrunc, Math.Min(20, lastTrunc.Length), lastTrunc.Length - Math.Min(20, lastTrunc.Length));
-
-                if (_frmSubtitle != null)
-                    _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) =>
-                    _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
+                _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) => _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
             }
         }
 
         public void HandleResult(string res, bool pa)
         {
             var resObject = JsonConvert.DeserializeObject<Result>(res);
-            if (resObject != null)
+            if (resObject == null) return;
+
+            if (pa && resObject.partial.Length > 0)
             {
-                if (pa)
-                {
-                    if (resObject.partial.Length > 0)
-                    {
-                        tbRealtime.Text = resObject.partial;
-                        ProcessHoverBox(resObject.partial);
-                    }
-                }
-                else
-                {
-                    if (resObject.text.Length > 0) tbFinalText.Text += (resObject.text + "\r\n\r\n");
-                    if (resObject.result != null)
-                    {
-                        tbStats.Clear();
-                        foreach (Result.Words w in resObject.result)
-                        {
-                            tbStats.Text += ("Duration of " + w.word + ": " + (w.end - w.start) + "s, Confidence: " + (w.conf * 100.0f) + "%\r\n");
-                        }
-                    }
-                }
+                tbRealtime.Text = resObject.partial;
+                ProcessHoverBox(resObject.partial);
+            }
+            else if (!pa && resObject.text.Length > 0)
+            {
+                tbFinalText.Text += $"{resObject.text}\r\n\r\n";
+                tbStats.Clear();
+                foreach (Result.Words w in resObject.result ?? Enumerable.Empty<Result.Words>())
+                    tbStats.Text += $"Duration of {w.word}: {(w.end - w.start)}s, Confidence: {(w.conf * 100.0f):N2}%\r\n";
             }
         }
 
@@ -317,9 +258,13 @@ namespace RecogUI
         {
             if(cbSub.Checked)
             {
-                _frmSubtitle?.Dispose();
-                _frmSubtitle = new FrmSubtitle(_settings);
-                _frmSubtitle.Show();
+                var f = (Form)Control.FromHandle(Handle);
+                f.Invoke(new Action(() =>
+                {
+                    _frmSubtitle?.Dispose();
+                    _frmSubtitle = new FrmSubtitle(_settings);
+                    _frmSubtitle.Show();
+                }));
             } else
             {
                 _frmSubtitle?.Hide();
@@ -349,7 +294,6 @@ namespace RecogUI
 
         private void checkBoxPreserveSlash_CheckedChanged(object sender, EventArgs e)
         {
-
             _settings.PreserveSlash = checkBoxPreserveSlash.Checked;
         }
 
