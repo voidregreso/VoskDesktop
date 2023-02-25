@@ -6,7 +6,7 @@ namespace RecogUI
 {
     public class SettingsObj
     {
-        public string Font;
+        public string Font= "";
         public Color Color1;
         public Color Color2;
         public Color BorderColor;

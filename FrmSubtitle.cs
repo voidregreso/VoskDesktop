@@ -5,7 +5,7 @@ namespace RecogUI
 {
     public partial class FrmSubtitle : Form
     {
-        private SettingsObj _settings;
+        private SettingsObj? _settings;
         public FrmSubtitle(SettingsObj settings)
         {
             _settings = settings;

@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.ComponentModel;
 using Cyotek.Windows.Forms;
+using VoskDesktop;
 
 namespace RecogUI
 {
@@ -14,10 +15,10 @@ namespace RecogUI
 
         private Model? model = null;
         private bool parado = true;
-        private static BackgroundWorker bw;
+        private static BackgroundWorker? bw;
         private WasapiCapture waveIn;
-        private volatile FrmSubtitle _frmSubtitle;
-        private volatile SettingsObj _settings;
+        private volatile FrmSubtitle? _frmSubtitle;
+        private volatile SettingsObj? _settings;
         private readonly ColorPickerDialog _colorDialog = new ColorPickerDialog();
         private Font _font = DefaultFont;
 
@@ -27,14 +28,13 @@ namespace RecogUI
             comboLang.SelectedIndex = 2;
             comboSmpR.SelectedIndex = 3;
             rbLoop.Checked = true;
-            LoadModel(comboLang.SelectedIndex);
             cbxGradientType.SelectedIndex = 0;
             _settings = new SettingsObj
             {
                 BorderColor = Color.Black,
                 Color1 = Color.GhostWhite,
                 Color2 = Color.LightGray,
-                FontActual = new Font(new FontFamily("Microsoft Yahei"), 24.0f, FontStyle.Regular, GraphicsUnit.Point),
+                FontActual = new Font(new FontFamily("Microsoft Yahei"), 22.0f, FontStyle.Regular, GraphicsUnit.Point),
                 GradientType = 1
             };
             try
@@ -58,7 +58,7 @@ namespace RecogUI
             else return new WasapiCapture();
         }
 
-        public void LoadModel(int idx)
+        public IntPtr LoadModel(int idx)
         {
             string[] models = { "model-small-en", "model-small-fr", "model-small-es", "model-small-pt", "model-small-it", "model-small-de" };
             string cpath = Directory.GetCurrentDirectory() + "\\";
@@ -71,18 +71,9 @@ namespace RecogUI
                 FieldInfo field = type.GetField("handle", BindingFlags.NonPublic | BindingFlags.Instance);
                 IntPtr handle = ((HandleRef)field.GetValue(model)).Handle;
 
-                if (handle == IntPtr.Zero)
-                {
-                    MessageBox.Show("Model cannot be loaded! Check whether it exists.",
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Environment.Exit(1);
-                }
+                return handle;
             }
-            else
-            {
-                MessageBox.Show("Internal Error!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(1);
-            }
+            else return IntPtr.Zero;
         }
 
         public int getSampleRate(int idx)
@@ -102,23 +93,24 @@ namespace RecogUI
                     return 48000;
             }
         }
-        private void ProcessHoverBox(string sub)
+
+        private void ProcessHoverBox(string sub, int len_perline)
         {
             int wordCount = sub.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
-            if (wordCount < 15 && _frmSubtitle != null)
+            if (wordCount < len_perline && _frmSubtitle != null)
                 _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) => _frmSubtitle.UpdateSub(line1, line2)), sub, "");
             else if (_frmSubtitle != null)
             {
                 string[] words = sub.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                string firstPart = string.Join(' ', words, 0, 15);
-                string secondPart = string.Join(' ', words, 15, Math.Min(wordCount - 15, 15));
+                string firstPart = string.Join(' ', words, 0, len_perline);
+                string secondPart = string.Join(' ', words, len_perline, Math.Min(wordCount - len_perline, len_perline));
 
-                if (wordCount > 30)
+                if (wordCount > len_perline * 2)
                 {
-                    words = words.Skip(Math.Max(0, wordCount - 30)).Take(30).ToArray();
-                    firstPart = string.Join(' ', words, 0, Math.Min(words.Length, 20));
-                    secondPart = string.Join(' ', words, Math.Min(words.Length, 20), Math.Max(0, words.Length - 20));
+                    words = words.Skip(Math.Max(0, wordCount - len_perline * 2)).Take(len_perline * 2).ToArray();
+                    firstPart = string.Join(' ', words, 0, Math.Min(words.Length, len_perline));
+                    secondPart = string.Join(' ', words, Math.Min(words.Length, len_perline), Math.Max(0, words.Length - len_perline));
                 }
 
                 _frmSubtitle.BeginInvoke(new Action<string, string>((line1, line2) => _frmSubtitle.UpdateSub(line1, line2)), firstPart, secondPart);
@@ -133,7 +125,7 @@ namespace RecogUI
             if (pa && resObject.partial.Length > 0)
             {
                 tbRealtime.Text = resObject.partial;
-                ProcessHoverBox(resObject.partial);
+                ProcessHoverBox(resObject.partial, 15);
             }
             else if (!pa && resObject.text.Length > 0)
             {
@@ -194,12 +186,12 @@ namespace RecogUI
             if (e.Cancelled)
             {
                 waveIn.StopRecording();
-                parado = true;
             }
             else if (e.Error != null)
             {
                 MessageBox.Show("Worker exception:" + e.Error.ToString());
             }
+            parado = true;
         }
 
         private void btnStartRecog_Click(object sender, EventArgs e)
@@ -234,9 +226,31 @@ namespace RecogUI
             bw.CancelAsync();
         }
 
-        private void comboLang_SelectedIndexChanged(object sender, EventArgs e)
+        private async void comboLang_SelectedIndexChanged(object sender, EventArgs e)
         {
-            LoadModel(comboLang.SelectedIndex);
+            var progressDialog = new ProgressDialog();
+            var result = IntPtr.Zero;
+            progressDialog.Show(this);
+            progressDialog.Line1 = "Loading models in background thread";
+            progressDialog.Line2 = "Please wait until the operation completes";
+            progressDialog.CancelButton = false;
+            progressDialog.Marquee = true;
+            this.Enabled = false;
+
+            await Task.Run(() =>
+            {
+                result = LoadModel(comboLang.SelectedIndex);
+            });
+
+            progressDialog.Close();
+            this.Enabled = true;
+
+            if (result == IntPtr.Zero)
+            {
+                MessageBox.Show("Model cannot be loaded! Check whether it exists.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1);
+            }
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -258,7 +272,7 @@ namespace RecogUI
         {
             if(cbSub.Checked)
             {
-                var f = (Form)Control.FromHandle(Handle);
+                var f = (Form)FromHandle(Handle);
                 f.Invoke(new Action(() =>
                 {
                     _frmSubtitle?.Dispose();
